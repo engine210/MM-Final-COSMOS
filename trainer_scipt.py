@@ -20,13 +20,13 @@ from utils.dataset import CaptionInContext
 text_field, word_embeddings, vocab_size = get_text_metadata()
 
 # DataLoaders
-train_dataset = CaptionInContext(metadata_file=os.path.join(DATA_DIR, 'annotations', 'train_data.json'),
+train_dataset = CaptionInContext(metadata_file=os.path.join(DATA_DIR, 'mmsys_anns', 'train_data.json'),
                                  transforms=img_transform_train, mode='train', text_field=text_field)
 
-val_dataset = CaptionInContext(metadata_file=os.path.join(DATA_DIR, 'annotations', 'val_data.json'),
+val_dataset = CaptionInContext(metadata_file=os.path.join(DATA_DIR, 'mmsys_anns', 'val_data.json'),
                                transforms=img_transform, mode='val', text_field=text_field)
 
-test_dataset = CaptionInContext(metadata_file=os.path.join(DATA_DIR, 'annotations', 'test_data.json'),
+test_dataset = CaptionInContext(metadata_file=os.path.join(DATA_DIR, 'mmsys_anns', 'public_test_mmsys_final.json'),
                                transforms=img_transform, mode='test', text_field=text_field)
 
 train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, num_workers=4, shuffle=True,
@@ -160,7 +160,7 @@ def train_joint_model():
         if avg_test_loss <= best_loss:
             counter = 0
             best_loss = avg_test_loss
-            torch.save(combined_model.state_dict(), 'models/' + model_name + '.pt')
+            torch.save(combined_model.state_dict(), os.path.join(BASE_DIR, 'models', model_name + '.pt'))
             print("Best model saved/updated..")
             torch.cuda.empty_cache()
         else:

@@ -774,5 +774,7 @@ class Sequence(object):
                 prob = self.probs
 
             if random.random() < prob:
-                images, bboxes = augmentation(images, bboxes)
+                # images, bboxes = augmentation(images, bboxes)
+                images_aug, bboxes_aug = augmentation(images, bboxes)
+                images, bboxes = (images_aug, bboxes_aug) if len(bboxes_aug) > 0 else (images, bboxes)
         return images, bboxes
