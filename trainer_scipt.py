@@ -180,7 +180,7 @@ def test_match_accuracy():
     """
     try:
         print("Loading Saved Model")
-        checkpoint = torch.load(BASE_DIR + 'models_final/' + model_name + '.pt')
+        checkpoint = torch.load(BASE_DIR + 'models/' + model_name + '.pt')
         combined_model.load_state_dict(checkpoint)
         print("Saved Model successfully loaded")
         combined_model.eval()

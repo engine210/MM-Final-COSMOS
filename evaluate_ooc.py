@@ -34,7 +34,7 @@ def get_scores(v_data):
             score_c1 (float): Score for the first caption associated with the image
             score_c2 (float): Score for the second caption associated with the image
     """
-    checkpoint = torch.load(BASE_DIR + 'models_final/' + model_name + '.pt')
+    checkpoint = torch.load(BASE_DIR + 'models/' + model_name + '.pt')
     combined_model.load_state_dict(checkpoint)
     combined_model.to(device)
     combined_model.eval()
@@ -114,7 +114,7 @@ def evaluate_context_with_bbox_overlap(v_data):
 if __name__ == "__main__":
     """ Main function to compute out-of-context detection accuracy"""
 
-    test_samples = read_json_data(os.path.join(DATA_DIR, 'annotations', 'test_data.json'))
+    test_samples = read_json_data(os.path.join(DATA_DIR, 'mmsys_anns', 'public_test_mmsys_final.json'))
     ours_correct = 0
     lang_correct = 0
 
