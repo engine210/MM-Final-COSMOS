@@ -1,6 +1,7 @@
 """ Script file to train the model """
 
 import os
+import torch
 import numpy as np
 import argparse
 from tqdm import tqdm
@@ -14,7 +15,7 @@ from utils.dataset_utils import PadCollate
 from utils.eval_utils import get_match_vs_no_match_acc, margin_loss_text_combined, process_text_embedding
 from utils.config import *
 from utils.dataset import CaptionInContext
-
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 # Word Embeddings
 text_field, word_embeddings, vocab_size = get_text_metadata()
