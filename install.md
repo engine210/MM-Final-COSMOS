@@ -189,6 +189,10 @@ Loading Saved Model
 RuntimeError: received 0 items of ancdata
 ```
 Solution:
+```py
+torch.multiprocessing.set_sharing_strategy('file_system')
+```
+another way
 ```sh
 sudo sh -c "ulimit -n 65535 && exec su $LOGNAME"
 ```
