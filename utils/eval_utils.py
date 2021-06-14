@@ -78,8 +78,13 @@ def margin_loss_text_combined(z_img, z_text_match, z_text_diff):
     """
     score_match, score_diff = compute_score(z_img, z_text_match, z_text_diff)
     # Rank Images
-    sum_match_img = torch.max(score_match, dim=1).values
-    sum_diff_img = torch.max(score_diff, dim=1).values
+    
+    sum_match_img, box_ind = torch.max(score_match, dim=1)
+    #sum_diff_img = torch.max(score_diff, dim=1).values 
+    ## 6/13 take mean instead of max of the non-matching caption
+    sum_diff_img = torch.mean(score_diff, dim=1)
+    ## 6/12 take the same bbox as match
+    ## sum_diff_img = torch.flatten(score_diff.gather(1, box_ind.view(-1,1)))
     img_rank_loss = margin_rank_loss(sum_match_img, sum_diff_img, torch.ones(sum_match_img.shape[0]).to(device))
     return img_rank_loss
 

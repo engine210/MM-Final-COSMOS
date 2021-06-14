@@ -7,6 +7,11 @@ from utils.text_utils import get_text_metadata
 from model_archs.models import CombinedModelMaskRCNN
 from utils.common_utils import read_json_data
 from utils.eval_utils import is_bbox_overlap, top_bbox_from_scores
+from simcse import SimCSE
+from sentence_transformers import SentenceTransformer, util
+
+#stmodel = SentenceTransformer('paraphrase-MiniLM-L12-v2')
+#smodel = SimCSE("princeton-nlp/sup-simcse-bert-large-uncased")
 
 
 # Word Embeddings
@@ -34,7 +39,7 @@ def get_scores(v_data):
             score_c1 (float): Score for the first caption associated with the image
             score_c2 (float): Score for the second caption associated with the image
     """
-    checkpoint = torch.load(BASE_DIR + 'models_final/' + model_name + '.pt')
+    checkpoint = torch.load(BASE_DIR + 'models/' + model_name + '.pt')
     combined_model.load_state_dict(checkpoint)
     combined_model.to(device)
     combined_model.eval()
@@ -110,6 +115,17 @@ def evaluate_context_with_bbox_overlap(v_data):
         # Check for captions with same context : Different grounding (Not out of context)
         return 0
 
+def compute_sim(v_data):
+    cap1 = v_data['caption1_modified']
+    cap2 = v_data['caption2_modified']
+    #similarities = smodel.similarity(cap1, cap2)
+    embeddings1 = stmodel.encode(cap1, convert_to_tensor=True)
+    embeddings2 = stmodel.encode(cap2, convert_to_tensor=True)
+
+    similarities = util.pytorch_cos_sim(embeddings1, embeddings2)
+
+    return similarities
+
 
 if __name__ == "__main__":
     """ Main function to compute out-of-context detection accuracy"""
@@ -120,8 +136,12 @@ if __name__ == "__main__":
 
     for i, v_data in enumerate(test_samples):
         actual_context = int(v_data['context_label'])
+        score = float(compute_sim(v_data))
         language_context = 0 if float(v_data['bert_base_score']) >= textual_sim_threshold else 1
-        pred_context = evaluate_context_with_bbox_overlap(v_data)
+        #if i >= 950 and i < 990:
+        #    print(score, actual_context)
+        #language_context = 0 if  score >= textual_sim_threshold else 1
+        #pred_context = evaluate_context_with_bbox_overlap(v_data)
 
         if pred_context == actual_context:
             ours_correct += 1
@@ -129,5 +149,5 @@ if __name__ == "__main__":
         if language_context == actual_context:
             lang_correct += 1
 
-    print("Cosmos Accuracy", ours_correct / len(test_samples))
+    #print("Cosmos Accuracy", ours_correct / len(test_samples))
     print("Language Baseline Accuracy", lang_correct / len(test_samples))

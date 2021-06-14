@@ -41,7 +41,7 @@ test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, num_worker
 # Models (create model according to text embedding)
 if embed_type == 'use':
     # For USE (Universal Sentence Embeddings)
-    model_name = 'img_use_rcnn_margin_10boxes_jitter_rotate_aug_ner'
+    model_name = 'unmatch_mean_loss'
     combined_model = CombinedModelMaskRCNN(hidden_size=300, use=True).to(device)
 else:
     # For Glove and Fasttext Embeddings

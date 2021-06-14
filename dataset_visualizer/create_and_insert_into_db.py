@@ -81,7 +81,7 @@ def insert_into_tables():
     insert_train_val_data(articles, "VAL_DATA_CAPTIONS")
 
     print("Inserting Test Data")
-    articles = read_json_data(os.path.join(DATA_DIR, "annotations", "test_data.json"))
+    articles = read_json_data(os.path.join(DATA_DIR, "annotations", "public_test_mmsys_final.json"))
     insert_test_data(articles, "TEST_DATA_CAPTIONS")
 
 
