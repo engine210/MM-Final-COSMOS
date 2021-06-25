@@ -39,6 +39,7 @@ img_transform_train = transforms.Compose([transforms.ToPILImage(), transforms.Co
 
 # Image Partitioning
 num_boxes = 11  # Number of bounding boxes used in experiments, one additional box for entire image (global context)
+# num_boxes = 10  # remove whole image
 retrieve_gt_proposal_features = True    # Flag that controls whether to retrieve bounding box features from Mask RCNN backbone or not
 scoring = 'dot'  # Scoring function to combine image and text embeddings
 

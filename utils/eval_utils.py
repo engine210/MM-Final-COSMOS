@@ -3,7 +3,7 @@
 """
 import torch
 from utils.config import margin_rank_loss, device, scoring, embed_type, use_embed
-
+import numpy as np
 
 def process_text_embedding(text_match, text_diff):
     """
@@ -149,7 +149,9 @@ def top_bbox_from_scores(bboxes, scores):
     bbox_scores = [(bbox, score) for bbox, score in zip(bboxes, scores)]
     sorted_bbox_scores = sorted(bbox_scores, key=lambda x: x[1], reverse=True)
     matched_bbox = sorted_bbox_scores[0][0]
-    return matched_bbox
+    # return matched_bbox
+    # mimi threshold / print diff with mean
+    return matched_bbox, (sorted_bbox_scores[0][1] - torch.mean(scores))
 
 
 def is_bbox_overlap(bbox1, bbox2, iou_overlap_threshold):

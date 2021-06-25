@@ -7,6 +7,8 @@ from utils.common_utils import read_json_data
 from utils.config import num_boxes, embed_type, DATA_DIR
 from utils.custom_transforms.data_aug import *
 
+# mimi text augmentation
+from utils.text_aug import *
 
 class CaptionInContext(Dataset):
     """Custom dataset class for Out-of-Context Detection"""
@@ -49,9 +51,12 @@ class CaptionInContext(Dataset):
                 img_aug, bboxes_aug = self.flip_rotate_transform(img, np.array(bboxes))
                 bboxes_aug = bboxes_aug.tolist()
                 bboxes = list(it.islice(it.cycle(bboxes_aug), num_boxes - 1))
+                # mimi remove whole image
+                # bboxes = list(it.islice(it.cycle(bboxes_aug), num_boxes))
                 img = img_aug
 
             # Consider entire image as additional object for global context
+            # mimi remove whole image
             img = self.transforms(img).permute(1, 2, 0)
             img_shape = img.shape[:2]
             bboxes.append([0, 0, img_shape[1], img_shape[0]])
@@ -82,6 +87,11 @@ class CaptionInContext(Dataset):
                     if caption1 != caption2:
                         break
 
+            # mimi text augmentation
+            if self.mode == 'train':
+                caption1 = augment_text(caption1)
+                caption2 = augment_text(caption2)
+                
             # Compute text-embeddings for Glove and Fasttext embeddings
             if embed_type != 'use':
                 text_match = self.text_field.preprocess(caption1)
@@ -93,7 +103,8 @@ class CaptionInContext(Dataset):
                 # For USE embeddings, embeddings will be evaluated in trainer script
                 text_match = caption1
                 text_diff = caption2
-
+           
+            
             return img, text_match, text_diff, len(text_match), len(text_diff), bboxes, bbox_class
         except:
             print("Error in ", self.data[index]['img_local_path'])

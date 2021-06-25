@@ -16,6 +16,8 @@ from utils.eval_utils import get_match_vs_no_match_acc, margin_loss_text_combine
 from utils.config import *
 from utils.dataset import CaptionInContext
 torch.multiprocessing.set_sharing_strategy('file_system')
+# debug
+import pdb;
 
 # Word Embeddings
 text_field, word_embeddings, vocab_size = get_text_metadata()
@@ -41,7 +43,7 @@ test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size, num_worker
 # Models (create model according to text embedding)
 if embed_type == 'use':
     # For USE (Universal Sentence Embeddings)
-    model_name = 'img_use_rcnn_margin_10boxes_jitter_rotate_aug_ner'
+    model_name = 'mmsys21-gc-cheapfakes-baseline-model-text-aug'
     combined_model = CombinedModelMaskRCNN(hidden_size=300, use=True).to(device)
 else:
     # For Glove and Fasttext Embeddings
@@ -80,6 +82,7 @@ def train_model(epoch):
     # Training loop
     for batch_idx, (img, text_match, text_diff, seq_len_match, seq_len_diff, bboxes, bbox_classes) in enumerate(
             tqdm(train_loader)):
+
         text_match, text_diff = process_text_embedding(text_match, text_diff)
         batch = len(img)
         with torch.set_grad_enabled(True):
@@ -147,7 +150,9 @@ def train_joint_model():
         combined_model.load_state_dict(checkpoint)
         print("Saved Model successfully loaded")
         combined_model.eval()
-        best_loss = eval_validation_loss()
+        # best_loss = eval_validation_loss()
+        # mimi for pretrained, reset best loss
+        best_loss = np.inf
     except:
         best_loss = np.Inf
     early_stop = False
