@@ -28,7 +28,7 @@ text_lr = 1e-3
 # Losses
 cse_loss = nn.CrossEntropyLoss(reduction='mean')
 mse_loss = nn.MSELoss(reduction='mean')
-margin_rank_loss = nn.MarginRankingLoss(margin=1)
+margin_rank_loss = nn.MarginRankingLoss(margin=11)
 
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

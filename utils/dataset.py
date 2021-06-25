@@ -1,5 +1,6 @@
 import os.path
 import torch
+import random
 import itertools as it
 from torch.utils.data import Dataset
 from utils.dataset_utils import modify_caption_replace_entities
@@ -7,6 +8,34 @@ from utils.common_utils import read_json_data
 from utils.config import num_boxes, embed_type, DATA_DIR
 from utils.custom_transforms.data_aug import *
 
+import nlpaug.augmenter.word as naw
+from nlpaug.util import Action
+
+def text_aug(text):
+    aug_text = text
+    if random.random() >= 0.5:
+        aug = naw.RandomWordAug(action="swap")
+        aug_text = aug.augment(text)
+    # if random.random() >= 0.5:
+    #     try:
+    #         aug = naw.RandomWordAug(action="crop")
+    #         aug_text = naw.augment(text)
+    #     except:
+    #         print("error 2")
+    #         aug_text = text
+    # if random.random() >= 0.5:
+    #     # delete
+    #     try:
+    #         aug = naw.RandomWordAug()
+    #         aug_text = naw.augment(text)
+    #     except:
+    #         print("error 3")
+    #         aug_text = text
+    if random.random() >= 0.5:
+        aug = naw.SynonymAug(aug_src='wordnet')
+        aug_text = aug.augment(text)
+
+    return aug_text
 
 class CaptionInContext(Dataset):
     """Custom dataset class for Out-of-Context Detection"""
@@ -81,6 +110,11 @@ class CaptionInContext(Dataset):
                     caption2 = tgt_captions[random.randint(0, len(tgt_captions) - 1)]['caption_modified']
                     if caption1 != caption2:
                         break
+                # try text augmentation
+                #print(text_match)
+                #caption1 = text_aug(caption1)
+                #caption2 = text_aug(caption2)
+                #print(text_match)
 
             # Compute text-embeddings for Glove and Fasttext embeddings
             if embed_type != 'use':
@@ -103,3 +137,5 @@ class CaptionInContext(Dataset):
             Returns length of the dataset
         """
         return len(self.data)
+
+    

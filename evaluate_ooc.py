@@ -7,12 +7,8 @@ from utils.text_utils import get_text_metadata
 from model_archs.models import CombinedModelMaskRCNN
 from utils.common_utils import read_json_data
 from utils.eval_utils import is_bbox_overlap, top_bbox_from_scores
-from simcse import SimCSE
-from sentence_transformers import SentenceTransformer, util
 
-#stmodel = SentenceTransformer('paraphrase-MiniLM-L12-v2')
-#smodel = SimCSE("princeton-nlp/sup-simcse-bert-large-uncased")
-
+import numpy as np
 
 # Word Embeddings
 text_field, word_embeddings, vocab_size = get_text_metadata()
@@ -20,7 +16,7 @@ text_field, word_embeddings, vocab_size = get_text_metadata()
 # Models (create model according to text embedding)
 if embed_type == 'use':
     # For USE (Universal Sentence Embeddings)
-    model_name = 'img_use_rcnn_margin_10boxes_jitter_rotate_aug_ner'
+    model_name = 'train_unmatch_first'
     combined_model = CombinedModelMaskRCNN(hidden_size=300, use=True).to(device)
 else:
     # For Glove and Fasttext Embeddings
@@ -40,6 +36,7 @@ def get_scores(v_data):
             score_c2 (float): Score for the second caption associated with the image
     """
     checkpoint = torch.load(BASE_DIR + 'models/' + model_name + '.pt')
+    
     combined_model.load_state_dict(checkpoint)
     combined_model.to(device)
     combined_model.eval()
@@ -70,6 +67,7 @@ def get_scores(v_data):
         # For USE embeddings
         embed_c1 = torch.tensor(use_embed([cap1]).numpy()).to(device)
         embed_c2 = torch.tensor(use_embed([cap2]).numpy()).to(device)
+        
 
     with torch.no_grad():
         z_img, z_t_c1, z_t_c2 = combined_model(img_tensor, embed_c1, embed_c2, 1, [embed_c1.shape[1]],
@@ -103,6 +101,7 @@ def evaluate_context_with_bbox_overlap(v_data):
     top_bbox_c1 = top_bbox_from_scores(bboxes, score_c1)
     top_bbox_c2 = top_bbox_from_scores(bboxes, score_c2)
     bbox_overlap = is_bbox_overlap(top_bbox_c1, top_bbox_c2, iou_overlap_threshold)
+
     if bbox_overlap:
         # Check for captions with same context : Same grounding with high textual overlap (Not out of context)
         if textual_sim >= textual_sim_threshold:
@@ -114,17 +113,7 @@ def evaluate_context_with_bbox_overlap(v_data):
     else:
         # Check for captions with same context : Different grounding (Not out of context)
         return 0
-
-def compute_sim(v_data):
-    cap1 = v_data['caption1_modified']
-    cap2 = v_data['caption2_modified']
-    #similarities = smodel.similarity(cap1, cap2)
-    embeddings1 = stmodel.encode(cap1, convert_to_tensor=True)
-    embeddings2 = stmodel.encode(cap2, convert_to_tensor=True)
-
-    similarities = util.pytorch_cos_sim(embeddings1, embeddings2)
-
-    return similarities
+            
 
 
 if __name__ == "__main__":
@@ -133,21 +122,46 @@ if __name__ == "__main__":
     test_samples = read_json_data(os.path.join(DATA_DIR, 'annotations', 'test_data.json'))
     ours_correct = 0
     lang_correct = 0
+    
+    # test
+    lang_uncorrect_ooc_to_nooc = 0
+    lang_uncorrect_nooc_to_ooc = 0
+    ours_uncorrect_ooc_to_nooc = 0
+    ours_uncorrect_nooc_to_ooc = 0
 
     for i, v_data in enumerate(test_samples):
         actual_context = int(v_data['context_label'])
-        score = float(compute_sim(v_data))
         language_context = 0 if float(v_data['bert_base_score']) >= textual_sim_threshold else 1
-        #if i >= 950 and i < 990:
-        #    print(score, actual_context)
-        #language_context = 0 if  score >= textual_sim_threshold else 1
-        #pred_context = evaluate_context_with_bbox_overlap(v_data)
+
+        pred_context = evaluate_context_with_bbox_overlap(v_data)
+        
 
         if pred_context == actual_context:
             ours_correct += 1
+        elif pred_context == 0:
+            ours_uncorrect_ooc_to_nooc += 1
+            if float(v_data['bert_base_score']) < textual_sim_threshold:
+                pass
+            else:
+                pass
 
+        elif pred_context == 1:
+            ours_uncorrect_nooc_to_ooc += 1
+            
+        # language moel
         if language_context == actual_context:
             lang_correct += 1
+        elif language_context == 0:
+            lang_uncorrect_ooc_to_nooc += 1
+        elif language_context == 1:
+            lang_uncorrect_nooc_to_ooc += 1
 
-    #print("Cosmos Accuracy", ours_correct / len(test_samples))
+
+    print("Cosmos Accuracy", ours_correct / len(test_samples))
     print("Language Baseline Accuracy", lang_correct / len(test_samples))
+
+    print("Ours Uncorrect OOC to NOOC", ours_uncorrect_ooc_to_nooc / len(test_samples))
+    print("Ours Uncorrect NOOC to OOC", ours_uncorrect_nooc_to_ooc / len(test_samples))
+
+    print("Language Uncorrect OOC to NOOC", lang_uncorrect_ooc_to_nooc / len(test_samples))
+    print("Language Uncorrect NOOC to OOC", lang_uncorrect_nooc_to_ooc / len(test_samples))

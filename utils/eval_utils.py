@@ -17,6 +17,7 @@ def process_text_embedding(text_match, text_diff):
             text_match (Tensor): Processed text-embedding for matching caption
             text_diff (Tensor): Processed text-embedding for non-matching caption
     """
+
     if embed_type == 'use':
         text_match = torch.tensor(use_embed(text_match).numpy())
         text_diff = torch.tensor(use_embed(text_diff).numpy())
@@ -79,10 +80,15 @@ def margin_loss_text_combined(z_img, z_text_match, z_text_diff):
     score_match, score_diff = compute_score(z_img, z_text_match, z_text_diff)
     # Rank Images
     
-    sum_match_img, box_ind = torch.max(score_match, dim=1)
-    #sum_diff_img = torch.max(score_diff, dim=1).values 
+    #sum_match_img, box_ind = torch.max(score_match, dim=1)
+    ## 6/14 train unmatch first
+    sum_diff_img = torch.max(score_diff, dim=1).values 
+    sum_match_img = torch.zeros(sum_diff_img.shape, dtype=torch.float32).to(device)
     ## 6/13 take mean instead of max of the non-matching caption
-    sum_diff_img = torch.mean(score_diff, dim=1)
+    #sum_diff_img = torch.mean(score_diff, dim=1)
+    ## 6/16 take sum instead of max of the non-matching caption, also scale match to the same
+    #sum_diff_img = torch.sum(score_diff, dim=1)
+    #sum_match_img = sum_match_img*11
     ## 6/12 take the same bbox as match
     ## sum_diff_img = torch.flatten(score_diff.gather(1, box_ind.view(-1,1)))
     img_rank_loss = margin_rank_loss(sum_match_img, sum_diff_img, torch.ones(sum_match_img.shape[0]).to(device))
